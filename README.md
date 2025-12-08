@@ -1,4 +1,4 @@
-# fortify/github-action@v1 
+# fortify/github-action@v2 
 
 
 <!-- START-INCLUDE:p.marketing-intro.md -->
@@ -9,706 +9,335 @@
 
 
 
-<!-- START-INCLUDE:repo-readme.md -->
+<!-- START-INCLUDE:action/_root/readme.md -->
 
-The [Fortify github-action repository](https://github.com/fortify-ps/github-action) hosts various Fortify-related GitHub Actions as listed in the sections below.
+This GitHub Action allows for easy integration of Fortify Application Security Testing (AST) into your GitHub Action workflows. It  provides out-of-the-box support for Static Application Security Testing (SAST) and Software Composition Analysis (SCA); support for Dynamic or Mobile Application Security Testing (DAST & MAST) may be added in the future. Apart from utilizing the standard scan workflows provided by this GitHub Action, you may also choose to utilize the various building blocks to implement custom workflows, which can be either customized SAST or SCA workflows, or your own DAST or MAST workflows.
 
-**Fortify on Demand**
+The following sections describe these topics in more detail:
 
-* [`fortify/github-action`](#fortify-github-action)  
-  For now, this action provides the same functionality as the `fod-sast-scan` action listed below. Future versions may add support for running other types of scans or performing other FoD actions.
-* [`fortify/github-action/fod-sast-scan`](#fortify-github-action-fod-sast-scan)  
-  Package source code, submit static application security testing (SAST) scan request to Fortify on Demand, optionally wait for completion and export results back to the GitHub Security dashboard.
-* [`fortify/github-action/package`](#fortify-github-action-package)  
-  Package source code for running a SAST scan, using the latest version of ScanCentral Client. Optionally resolve dependencies for Software Composition Analysis (SCA) of open source components with integrated Debricked analysis via Fortify on Demand.
-* [`fortify/github-action/fod-export`](#fortify-github-action-fod-export)  
-  Export SAST vulnerability data from Fortify on Demand to the GitHub Security dashboard.
-* [`fortify/github-action/setup`](#fortify-github-action-setup)  
-  Install various Fortify tools like [fcli](https://github.com/fortify/fcli), [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm), [FortifyVulnerabilityExporter](https://github.com/fortify/FortifyVulnerabilityExporter) and [FortifyBugTrackerUtility](https://github.com/fortify-ps/FortifyBugTrackerUtility) for use in your pipeline
-  
-**Fortify Sofware Security Center (SSC) / ScanCentral SAST**
+* [Prerequisites](#prerequisites)
+* [Application Security Testing with Fortify on Demand](#application-security-testing-with-fortify-on-demand)
+* [Application Security Testing with SSC/ScanCentral](#application-security-testing-with-sscscancentral)
+* [Building blocks for custom workflows](#building-blocks-for-custom-workflows)
 
-* [`fortify/github-action`](#fortify-github-action)  
-  For now, this action provides the same functionality as the `sc-sast-scan` action listed below. Future versions may add support for running other types of scans or performing other SSC / ScanCentral actions.
-* [`fortify/github-action/sc-sast-scan`](#fortify-github-action-sc-sast-scan)  
-  Package source code, submit SAST scan request to ScanCentral SAST, optionally wait for completion and export results back to the GitHub Security dashboard.
-* [`fortify/github-action/package`](#fortify-github-action-package)  
-  Package source code for running a SAST scan, using the latest version of ScanCentral Client.
-* [`fortify/github-action/ssc-export`](#fortify-github-action-ssc-export)  
-  Export SAST vulnerability data from Fortify SSC to the GitHub Security dashboard.
-* [`fortify/github-action/setup`](#fortify-github-action-setup)  
-  Install various Fortify tools like [fcli](https://github.com/fortify/fcli), [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm), [FortifyVulnerabilityExporter](https://github.com/fortify/FortifyVulnerabilityExporter) and [FortifyBugTrackerUtility](https://github.com/fortify-ps/FortifyBugTrackerUtility) for use in your pipeline
 
-<a name="fortify-github-action"></a>
+<!-- START-INCLUDE:action/_generic/prerequisites-h2.md -->
 
-## fortify/github-action
+## Prerequisites
 
-The primary `fortify/github-action` action currently allows for running SAST scans on either Fortify on Demand or ScanCentral SAST.  Which activities to perform is controlled through action inputs, the input for those activities is provided through environment variables. With Fortify on Demand, software composition analysis of open source components may also be performed in conjunction with the SAST scan for customers who have purchased the functionality.
+
+<!-- START-INCLUDE:action/_generic/prerequisites.md -->
+
+This action assumes the standard software packages as provided by GitHub-hosted runners to be available. If you are using self-hosted runners, you may need to install some of these software packages in order to successfully use this action. In particular, not having the following software installed is known to cause issues when running `fortify/github-action` or one of its sub-actions:
+
+* Node.js
+* Visual C++ Redistributable (Windows-based runners only)
+* Bash shell   
+  If using Windows runners, this must be a Windows-based `bash` variant, for example as provided by MSYS2. You must make sure that this Windows-based `bash` variant is used for `run` steps that specify `shell: bash`. Actions will fail if the GitHub runner executes `bash` commands on the WSL-provided `bash.exe`
+
+<!-- END-INCLUDE:action/_generic/prerequisites.md -->
+
+
+<!-- END-INCLUDE:action/_generic/prerequisites-h2.md -->
+
+
+## Application Security Testing with Fortify on Demand
+
+The standard workflow provided by this GitHub Action allows for running a Static scan and optional open-source scan (software composition analysis) on Fortify on Demand. The following sample snippet demonstrates how to invoke this GitHub Action from a GitHub Actions workflow:
+
+```yaml
+    steps:    
+      - name: Check out source code
+        uses: actions/checkout@v4  
+      - name: Run Fortify on Demand SAST & SCA Scan
+        uses: fortify/github-action@v2
+        with:
+          sast-scan: true
+          debricked-sca-scan: true
+        env:
+          FOD_URL: https://ams.fortify.com
+          FOD_TENANT: ${{secrets.FOD_TENANT}}
+          FOD_USER: ${{secrets.FOD_USER}}
+          FOD_PASSWORD: ${{secrets.FOD_PAT}}
+          # FOD_CLIENT_ID: ${{secrets.FOD_CLIENT_ID}}
+          # FOD_CLIENT_SECRET: ${{secrets.FOD_CLIENT_SECRET}}
+          # FOD_LOGIN_EXTRA_OPTS: --socket-timeout=60s
+          # FOD_RELEASE: MyApp:MyRelease
+          # DO_SETUP: true
+          # SETUP_ACTION: https://scm.my.org/shared-repos/fcli-actions/setup.yaml
+          # SETUP_EXTRA_OPTS: --copy-from "${{ github.repository }}:${{ github.event.repository.default_branch }}"
+          # SC_CLIENT_VERSION: 24.4.1
+          # DO_PACKAGE_DEBUG: true
+          # PACKAGE_EXTRA_OPTS: -oss -bt mvn
+          # FOD_SAST_SCAN_EXTRA_OPTS:
+          # DO_WAIT: true
+          # DO_POLICY_CHECK: true
+          # POLICY_CHECK_ACTION: https://scm.my.org/shared-repos/fcli-actions/check-policy.yaml
+          # POLICY_CHECK_EXTRA_OPTS: --on-unsigned=ignore
+          # DO_JOB_SUMMARY: true
+          # JOB_SUMMARY_ACTION: https://scm.my.org/shared-repos/fcli-actions/job-summary.yaml
+          # JOB_SUMMARY_EXTRA_OPTS: --on-unsigned=ignore
+          # DO_PR_COMMENT: true
+          # PR_COMMENT_ACTION: https://scm.my.org/shared-repos/fcli-actions/github-pr-comment.yaml
+          # PR_COMMENT_EXTRA_OPTS: --on-unsigned=ignore
+          # DO_EXPORT: true
+          # EXPORT_ACTION: https://scm.my.org/shared-repos/fcli-actions/github-sast-report.yaml
+          # EXPORT_EXTRA_OPTS: --on-unsigned=ignore
+          # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip
+```
 
 ### Action inputs
 
-**`sast-scan`** - OPTIONAL    
-When set to true, the action will run a SAST scan on either Fortify on Demand (if the `FOD_URL` environment variable has been specified), or on ScanCentral SAST (if the `SSC_URL` environment variable has been specified). This includes packaging the source code, running the scan, and optionally reporting SAST scan results back into GitHub. 
+This section lists the inputs that can be specified in the `with:` clause for this GitHub Action. Any inputs marked in **bold** are required.
 
-If not specified or when set to false, no SAST scan will be performed. For now, this means that the action will complete without doing any work. Future versions of this action may provide additional inputs, for example allowing you to run a dynamic application security testing (DAST) scan instead of a SAST scan.
+| Action input | Description |
+| :--- | :--- |
+| sast&#8209;scan | If set to `true`, run a static scan. If not specified or set to `false`, the action will run neither static or open-source scan (independent of `debricked-sca-scan` setting), as open-source scans are currently only run in combination with a static scan. |
+| debricked&#8209;sca&#8209;scan | Configure the static scan to also run an open-source scan. Depending on Fortify on Demand configuration, this may be either a Debricked or a Sonatype scan. Effectively, this adds dependency data to the scan payload, and enables the open-source scan setting in the Fortify on Demand scan configuration. Note that any existing scan configuration will not be updated, so if the scan has already been configured in Fortify on Demand, an open-source scan will only be performed if previously enabled in the existing scan configuration. |
 
 ### Action environment variable inputs
 
-#### Fortify on Demand
+This section lists the environment variables that can be specified in the `env:` clause for this GitHub Action. Any environment variables marked in **bold** are required.
 
+| Environment variable | Description |
+| :--- | :--- |
+| **FOD_URL** | Fortify on Demand URL, for example https://ams.fortify.com. Note: Using GitHub Secrets to define this URL may cause links back to Fortify on Demand to be rendered incorrectly, for example in GitHub Action job summaries. It is highly recommended to either hard-code the URL in your workflow, or to use [GitHub Variables](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables) instead of GitHub Secrets. |
+| **FOD_CLIENT_ID**<br>**FOD_CLIENT_SECRET** | Required when authenticating with an API key: Fortify on Demand Client ID (API key) and Secret (API secret). |
+| **FOD_TENANT**<br/>**FOD_USER**<br/>**FOD_PASSWORD** | Required when authenticating with user credentials: Fortify on Demand tenant, user and password. It's recommended to use a Personal Access Token instead of an actual user password. |
+| FOD_LOGIN_EXTRA_OPTS<br/>EXTRA_FOD_LOGIN_OPTS | Extra login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli fod session login` documentation](https://fortify.github.io/fcli/v3.13.1//manpage/fcli-fod-session-login.html) . Note that `EXTRA_FOD_LOGIN_OPTS` is deprecated; please use `FOD_LOGIN_EXTRA_OPTS`.|
+| FOD_RELEASE | Fortify on Demand release to use with this action. This can be specified either as a numeric release id, `<app-name>:<release-name>` (for non-microservices applications) or `<app-name>:<microservice-name>:<release-name>` (for microservices applications). Default value is based on repository and branch name, for example `myOrg/myRepo:myBranch`. Note that you'll need to explicitly configure `FOD_RELEASE` for microservices applications, as the default value lacks a microservice name. |
+|DO_SETUP<br/>SETUP_ACTION<br/>SETUP_EXTRA_OPTS|If `DO_SETUP` is set to `true` (implied if any of the other two `SETUP_*` variables are set), the application and/or release will be automatically created if they do not yet exist and static scan settings will be configured if not configured already, using the fcli-provided [`setup-release`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_setup_release) or, if specified, the custom fcli action specified through `SETUP_ACTION`. Extra options for the fcli action can be passed through the `SETUP_EXTRA_OPTS` environment variable. Depending on your Git workflow, it is recommended to have each newly created release copy state from the release representing your default branch by passing `--copy-from "${{ github.repository }}:${{ github.event.repository.default_branch }}"` through `SETUP_EXTRA_OPTS`. To allow the GitHub Action to create new applications, you must (also) provide the `--app-owner <user>` option through `SETUP_EXTRA_OPTS` if authenticating with client credentials. Note that if setup is enabled, `FOD_RELEASE` must be configured with a qualified release name; you cannot use release id. Please see the [Fcli Actions](#fortify-on-demand-fcli-actions) section below for more details.|
+| SC_CLIENT_VERSION | By default, this action uses ScanCentral Client 25.4.0 for packaging. This environment variable allows for overriding the ScanCentral Client version used for packaging. |
+|DO_PACKAGE_DEBUG| If set to true, this will enable the `-debug` option on the `scancentral` command, and store both ScanCentral logs and the `package.zip` file as job artifacts.|
+|PACKAGE_EXTRA_OPTS<br/>EXTRA_PACKAGE_OPTS| By default, this action runs `scancentral package -o package.zip` to package application source code. Use `PACKAGE_EXTRA_OPTS` to specify additional packaging options, for example `PACKAGE_EXTRA_OPTS: -bt mvn -bf <custom build file>`. See [Command-line options for the package command](https://www.microfocus.com/documentation/fortify-software-security-center/2540/sc-sast-ugd-html-25.4.0/doc/2404_25.4/home.html) for more information on available options. Note that `EXTRA_PACKAGE_OPTS` is deprecated; please use `PACKAGE_EXTRA_OPTS`.|
+|FOD_SAST_SCAN_EXTRA_OPTS<br/>EXTRA_FOD_SAST_SCAN_OPTS|Extra SAST scan options; see [`fcli fod sast-scan start` documentation](https://fortify.github.io/fcli/v3.13.1//manpage/fcli-fod-sast-scan-start.html). Note that `EXTRA_FOD_SAST_SCAN_OPTS` is deprecated; please use `FOD_SAST_SCAN_EXTRA_OPTS`.|
+| DO_WAIT | By default, this action will not wait until scans have been completed. To have the workflow wait until all scans have been completed, set the `DO_WAIT` environment variable to `true`. Note that some other environment variables imply `DO_WAIT`, for example when exporting vulnerability data or generating job summaries. This behavior is documented in the applicable environment variable descriptions. |
+|DO_POLICY_CHECK<br/>CHECK_POLICY_ACTION<br/>CHECK_POLICY_EXTRA_OPTS|If `DO_POLICY_CHECK` is set to `true` (implied if any of the other two `CHECK_POLICY_*` variables are set, and implies `DO_WAIT`), a policy check will be run after scan completion using the fcli-provided [`check-policy`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_check_policy) or, if specified, the custom fcli action specified through `CHECK_POLICY_ACTION`. Extra options for a custom fcli action can be passed through the `CHECK_POLICY_EXTRA_OPTS` environment variable, which may include fcli options to allow unsigned custom actions to be used. Please see the [Fcli Actions](#fortify-on-demand-fcli-actions) section below for more details.|
+|DO_JOB_SUMMARY<br/>JOB_SUMMARY_ACTION<br/>JOB_SUMMARY_EXTRA_OPTS|If `DO_JOB_SUMMARY` is set to `true` (implied if any of the other two `JOB_SUMMARY_*` variables are set, and implies `DO_WAIT`), a job summary listing scan status and issue counts will be generated using the fcli-provided [`release-summary`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_release_summary) or, if specified, the custom fcli action specified through `JOB_SUMMARY_ACTION`. Extra options for the fcli action can be passed through the `JOB_SUMMARY_EXTRA_OPTS` environment variable, for example to allow an unsigned custom action to be used. Please see the [Fcli Actions](#fortify-on-demand-fcli-actions) section below for more details. |
+| DO_EXPORT<br/>EXPORT_ACTION<br/>EXPORT_EXTRA_OPTS | If `DO_EXPORT` is set to `true` (implied if any of the other two `EXPORT_*` variables are set, and implies `DO_WAIT`), scan results will be exported to the GitHub Security Code Scanning dashboard using the fcli-provided [`github-sast-report`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_github_sast_report) action or, if specified, the custom fcli action specified through `EXPORT_ACTION`. Extra options for the fcli action can be passed through the `EXPORT_EXTRA_OPTS` environment variable, for example to to allow an unsigned custom action to be used. Please see the [Fcli Actions](#fortify-on-demand-fcli-actions) section below for more details.<br/><br/>Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository. GitHub only supports importing SAST results; other results will not exported to GitHub. |
+|(PREVIEW)<br/>DO_PR_COMMENT<br/>PR_COMMENT_ACTION<br/>PR_COMMENT_EXTRA_OPTS|If `DO_PR_COMMENT` is set to `true` (implied if any of the other two `PR_COMMENT_*` variables are set, and implies `DO_WAIT`), a pull request comment listing new, re-introduced and removed issues will be generated using the fcli-provided [`github-pr-comment`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_github_pr_comment) action or, if specified, the custom fcli action specified through `PR_COMMENT_ACTION`. Extra options for the fcli action can be passed through the `PR_COMMENT_EXTRA_OPTS` environment variable, for example to allow an unsigned custom action to be used. Please see the [Fcli Actions](#fortify-on-demand-fcli-actions) and [Pull Request Comments](#fortify-on-demand-pull-request-comments) sections below for more details.|
+| TOOL_DEFINITIONS | Fortify tool definitions are used by this GitHub Action to determine available versions, download location and other details of various Fortify-related tools, as required for action execution. By default, the Fortify-provided tool definitions hosted at https://github.com/fortify/tool-definitions/releases/tag/v1 will be used.<br/><br/>This environment variable allows for overriding the default tool definitions, pointing to either a URL or local (workspace) file. For example, if GitHub workflows are not allowed to download tools from their public internet locations, customers may host the tool installation bundles on an internal server, together with a customized tool definitions bundle that lists the alternative download URLs. |
 
-<!-- START-INCLUDE:env-fod-sast-scan.md -->
 
+<!-- START-INCLUDE:action/_generic/fod/fod-fcli-actions.md -->
 
+### Fortify on Demand Fcli Actions
 
-<!-- START-INCLUDE:env-fod-login.md -->
+<!-- Note that similar instructions are provided for SSC in ssc-fcli-actions.md; when updating these instructions, ssc-fcli-actions.md will likely need to be updated accordingly -->
 
 
-<!-- START-INCLUDE:env-fod-connection.md -->
+<!-- START-INCLUDE:action/_generic/fcli-actions.md -->
 
-**`FOD_URL`** - REQUIRED   
-Fortify on Demand URL, for example https://ams.fortify.com
+As indicated in the [Action environment variable inputs](#action-environment-variable-inputs) section above, this GitHub Action utilizes one or more fcli actions to perform certain activities. These fcli-provided actions are used as building blocks that can be re-used across different CI/CD platforms to provide consistent behavior across those platforms. This GitHub Action also provides the ability to override the default built-in fcli actions with custom fcli actions, allowing for rich customization capabilities. For example, such custom fcli actions could define different default values for some action options, perform some additional activities, and/or provide fully customized behavior.
 
-**`FOD_CLIENT_ID` & `FOD_CLIENT_SECRET`** - REQUIRED*    
-Required when authenticating with an API key: FoD Client ID (API key) and Secret (API secret).
+For more information on fcli actions and custom action development, please see the [fcli action documentation](https://fortify.github.io/fcli/v3.13.1/#_actions). Such custom actions may be hosted either on the local file system (for example stored in your source code repository) or some remote location; the `*_ACTION` environment variables may point to either a local file or URL. To easily share custom actions across multiple pipelines, you may want to consider hosting these in a dedicated source code repository that's accessible by all pipelines. This provides an easy hosting location, and allows for easy maintenance of such custom actions.
 
-**`FOD_TENANT`, `FOD_USER` & `FOD_PASSWORD`** - REQUIRED*    
-Required when authenticating with user credentials: FoD tenant, user and password. It's recommended to use a Personal Access Token instead of an actual user password.
+<!-- END-INCLUDE:action/_generic/fcli-actions.md -->
 
-<!-- END-INCLUDE:env-fod-connection.md -->
 
+When developing custom actions, please note that the GitHub Action expects certain action parameters to be supported by such a custom action. A common example is the `--rel` / `--release` command-line option, which the GitHub Action will automatically pass to most or all fcli actions to specify the release to operate on. What command-line options are automatically passed to the fcli action may also depend on GitHub Action configuration. If the custom action doesn't support those action parameters, the action invocation will fail. You will also need to consider any options explicitly configured through the `*_EXTRA_OPTS` environment variable; for backward compatibility with existing GitHub Action workflows that have been configured with some extra action options, you should be careful with removing or renaming any action parameters.
 
-**`EXTRA_FOD_LOGIN_OPTS`** - OPTIONAL   
-Extra FoD login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli fod session login` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-fod-session-login.html)
+Future versions of this documentation may provide more details on what command-line options are automatically passed to fcli actions. Until then, you'll need to review workflow logs and/or GitHub Action source code to identify what action parameters are being automatically passed by the GitHub Action. Alternatively, you may want to consider simply duplicating all action parameters from the fcli built-in action, even if some of those parameters will not be used by your custom action.
 
-<!-- END-INCLUDE:env-fod-login.md -->
+<!-- END-INCLUDE:action/_generic/fod/fod-fcli-actions.md -->
 
 
 
-<!-- START-INCLUDE:env-fod-release.md -->
+<!-- START-INCLUDE:action/_generic/fod/fod-pr.md -->
 
-**`FOD_RELEASE`** - OPTIONAL    
-Fortify on Demand release to use with this action. This can be specified either as a numeric release id, `<app-name>:<release-name>` (for non-microservices applications) or `<app-name>:<microservice-name>:<release-name>` (for microservices applications). Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
+### Fortify on Demand Pull Request Comments
 
-<!-- END-INCLUDE:env-fod-release.md -->
+<!-- Note that similar instructions are provided for SSC in ssc-pr.md; when updating these instructions, ssc-pr.md will likely need to be updated accordingly -->
 
+This section provides more information on Pull Request Comments that will be generated if `DO_PR_COMMENT` is set to `true`. This information is based on the fcli-provided [`github-pr-comment`](https://fortify.github.io/fcli/v3.13.1/fod-actions.html#_github_pr_comment) action and may not apply when using a custom fcli action through `PR_COMMENT_ACTION`. 
 
+**Important note:** Pull Request comments are currently considered preview functionality. Configuration settings, behavior and output may significantly change in future GitHub Action releases as we work on improving and fine-tuning our PR decoration capabilities.
 
-<!-- START-INCLUDE:env-fod-package.md -->
+Pull request comments will only be generated under the following conditions:
 
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL     
-By default, this action runs `scancentral package -o package.zip` to package application source code. The `EXTRA_PACKAGE_OPTS` environment variable can be used to specify additional packaging options. 
+* Standard `GITHUB_REF_NAME` environment variable points to a pull request, which is only the case on GitHub `pull_request` triggers and not for example `manual` triggers (even if the branch is associated with a current pull request).
+* All other standard GitHub environment variables like `GITHUB_TOKEN`, `GITHUB_REPOSITORY` and `GITHUB_SHA` are set.
 
-If FoD Software Composition Analysis has been purchased and configured on the applicable release, you'll need to pass the `-oss` option through this environment variable to generate and package the additional dependency files required. 
+PR comments are generated by comparing scan results from the current GitHub Action run against the previous scan in the same application release; it won't detect any new/removed issues from older scans. For best results, you should configure your workflow as follows:
 
-Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient to properly package application source code. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
+- For any branches for which you might want to generate PR comments, have the workflow trigger only on `pull_request` events. Note that you can have a single workflow that is triggered on both `push` events for your main branch, and only `pull_request` events for all other branches.
+- Don't set `FOD_RELEASE`, to use the default value that corresponds to repository and branch name.
+- Set `DO_SETUP` to `true`, to allow a branch-specific application release to be automatically created.
+- Include `--copy-from` option in `SETUP_EXTRA_OPTS` to copy state from the release that represents the PR target branch or your main branch into the newly created application release.
 
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
+With a setup like this, whenever a new PR is created, the GitHub Action will:
+- Create a new application release named `<repository owner>/<repository name>:<branch name>`.
+- Copy state from the application release identified by the `--copy-from` option to this new application release.
+- Run a new scan of the branch associated with the current PR, and upload results to the application release created above.
+- Generate a PR comment listing new and removed issues, based on comparing the results of the new scan that was run in the previous step against the scan results that were copied from the application release identified by the `--copy-from` option.
 
-<!-- END-INCLUDE:env-fod-package.md -->
+If any subsequent updates are pushed to the PR and the workflow is also being triggered on PR update events, the GitHub Action will run a new scan of the branch associated with the PR, publish results to the existing branch-specific application release, and generate a new PR comment that shows any new/removed issues in the new scan compared to the previous scan for the same branch/PR.
 
+<!-- END-INCLUDE:action/_generic/fod/fod-pr.md -->
 
-**`EXTRA_FOD_SAST_SCAN_OPTS`** - OPTIONAL    
-Extra FoD SAST scan options; see [`fcli fod sast-scan start` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-fod-sast-scan-start.html)
 
+## Application Security Testing with SSC/ScanCentral
 
-<!-- START-INCLUDE:env-wait-export.md -->
-
-**`DO_WAIT`** - OPTIONAL    
-By default, this action will not wait until the scan has been completed. To have the workflow wait until the scan has been completed, set the `DO_WAIT` environment variable to `true`. Note that `DO_WAIT` is implied if `DO_EXPORT` is set to `true`; see below.
-
-**`DO_EXPORT`** - OPTIONAL    
-If set to `true`, this action will export scan results to the GitHub Security Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-<!-- END-INCLUDE:env-wait-export.md -->
-
-
-<!-- END-INCLUDE:env-fod-sast-scan.md -->
-
-
-#### ScanCentral SAST
-
-
-<!-- START-INCLUDE:env-sc-sast-scan.md -->
-
-
-
-<!-- START-INCLUDE:env-sc-sast-login.md -->
-
-
-<!-- START-INCLUDE:env-ssc-connection.md -->
-
-**`SSC_URL`** - REQUIRED   
-Fortify Software Security Center URL, for example https://ssc.customer.fortifyhosted.net/
-
-**`SSC_TOKEN`** - REQUIRED*   
-Required when authenticating with an SSC token (recommended). Most actions should work fine with a `CIToken`.
-
-**`SSC_USER` & `SSC_PASSWORD`** - REQUIRED*   
-Required when authenticating with SSC user credentials.
-
-<!-- END-INCLUDE:env-ssc-connection.md -->
-
-
-**`SC_SAST_CLIENT_AUTH_TOKEN`** - REQUIRED    
-Required: ScanCentral SAST Client Authentication Token for authenticating with ScanCentral SAST Controller.
-
-**`EXTRA_SC_SAST_LOGIN_OPTS`** - OPTIONAL    
-Extra ScanCentral SAST login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli sc-sast session login` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-sc-sast-session-login.html).
-
-<!-- END-INCLUDE:env-sc-sast-login.md -->
-
-
-
-<!-- START-INCLUDE:env-ssc-appversion.md -->
-
-**`SSC_APPVERSION`** - OPTIONAL   
-Fortify SSC application version to use with this action. This can be specified either as a numeric application version id, or by providing application and version name in the format `<app-name>:<version-name>`. Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
-
-<!-- END-INCLUDE:env-ssc-appversion.md -->
-
-
-
-<!-- START-INCLUDE:env-package.md -->
-
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL   
-By default, this action runs `scancentral package -o package.zip` to package application source code. Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
-
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
-
-<!-- END-INCLUDE:env-package.md -->
-
-
-**`EXTRA_SC_SAST_SCAN_OPTS`** - OPTIONAL    
-Extra ScanCentral SAST scan options; see [`fcli sc-sast scan start` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-sc-sast-scan-start.html)
-
-
-<!-- START-INCLUDE:env-wait-export.md -->
-
-**`DO_WAIT`** - OPTIONAL    
-By default, this action will not wait until the scan has been completed. To have the workflow wait until the scan has been completed, set the `DO_WAIT` environment variable to `true`. Note that `DO_WAIT` is implied if `DO_EXPORT` is set to `true`; see below.
-
-**`DO_EXPORT`** - OPTIONAL    
-If set to `true`, this action will export scan results to the GitHub Security Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-<!-- END-INCLUDE:env-wait-export.md -->
-
-
-<!-- END-INCLUDE:env-sc-sast-scan.md -->
-
-
-### Sample workflows
-
-The sample workflows below demonstrate how to configure the action for running a SAST scan on either Fortify on Demand or ScanCentral SAST.
-
-#### Fortify on Demand
+The standard workflow provided by this GitHub Action allows for running a static scan on ScanCentral SAST and/or running software composition analysis on Debricked. The following sample snippet demonstrates how to invoke this GitHub Action from a GitHub Actions workflow:
 
 ```yaml
     steps:    
       - name: Check out source code
         uses: actions/checkout@v4  
-      - name: Run FoD SAST Scan
-        uses: fortify/github-action@v1
+      - name: Run ScanCentral SAST & Debricked scan
+        uses: fortify/github-action@v2
         with:
           sast-scan: true
+          debricked-sca-scan: true
         env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{secrets.FOD_TENANT}}
-          FOD_USER: ${{secrets.FOD_USER}}
-          FOD_PASSWORD: ${{secrets.FOD_PAT}}
-          # EXTRA_FOD_LOGIN_OPTS: --socket-timeout=60s
-          # FOD_RELEASE: MyApp:MyRelease
-          # EXTRA_PACKAGE_OPTS: -oss
-          # DO_WAIT: true
-          # DO_EXPORT: true
-```
-
-#### ScanCentral SAST
-
-```yaml
-    steps:    
-      - name: Check out source code
-        uses: actions/checkout@v4  
-      - name: Run ScanCentral SAST Scan
-        uses: fortify/github-action@v1
-        with:
-          sast-scan: true
-        env:
-          SSC_URL: ${{secrets.SSC_URL}}
+          SSC_URL: ${{vars.SSC_URL}}
           SSC_TOKEN: ${{secrets.SSC_TOKEN}}
-          SC_SAST_CLIENT_AUTH_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
-          # EXTRA_SC_SAST_LOGIN_OPTS: --socket-timeout=60s
+          SC_SAST_TOKEN: ${{secrets.SC_SAST_CLIENT_AUTH_TOKEN}}
+          # SSC_LOGIN_EXTRA_OPTS: --socket-timeout=60s
+          DEBRICKED_TOKEN: ${{secrets.DEBRICKED_TOKEN}}
           # SSC_APPVERSION: MyApp:MyVersion
-          # EXTRA_PACKAGE_OPTS: -bf custom-pom.xml
+          # DO_SETUP: true
+          # SETUP_ACTION: https://scm.my.org/shared-repos/fcli-actions/setup.yaml
+          # SETUP_EXTRA_OPTS: --on-unsigned=ignore
+          # SC_CLIENT_VERSION: 24.4.1
+          # DO_PACKAGE_DEBUG: true
+          # PACKAGE_EXTRA_OPTS: -oss -bt mvn
+          # SC_SAST_SENSOR_VERSION: 24.4.1
+          # EXTRA_SC_SAST_SCAN_OPTS: 
           # DO_WAIT: true
+          # DO_POLICY_CHECK: true
+          # POLICY_CHECK_ACTION: https://scm.my.org/shared-repos/fcli-actions/check-policy.yaml
+          # POLICY_CHECK_EXTRA_OPTS: --on-unsigned=ignore
+          # DO_JOB_SUMMARY: true
+          # JOB_SUMMARY_ACTION: https://scm.my.org/shared-repos/fcli-actions/job-summary.yaml
+          # JOB_SUMMARY_EXTRA_OPTS: --on-unsigned=ignore
+          # DO_PR_COMMENT: true
+          # PR_COMMENT_ACTION: https://scm.my.org/shared-repos/fcli-actions/github-pr-comment.yaml
+          # PR_COMMENT_EXTRA_OPTS: --on-unsigned=ignore
           # DO_EXPORT: true
+          # EXPORT_ACTION: https://scm.my.org/shared-repos/fcli-actions/github-sast-report.yaml
+          # EXPORT_EXTRA_OPTS: --on-unsigned=ignore
+          # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip
 ```
-
-### More information
-
-Depending on input, this action delegates to the appropriate sub-action(s). Please refer to the documentation of these actions for a more detailed description of action behavior & requirements:
-
-* FoD SAST & optional SCA (open source) scan: [`fortify/github-action/fod-sast-scan`](#fortify-github-action-fod-sast-scan)
-* ScanCentral SAST scan: [`fortify/github-action/sc-sast-scan`](#fortify-github-action-sc-sast-scan)
-
-
-<a name="fortify-github-action-setup"></a>
-
-## fortify/github-action/setup
-
-
-<!-- START-INCLUDE:action-setup.md -->
-
-This action allows for setting up the Fortify tools listed below. Which tools and which versions to install, and whether to add the tool bin-directories to the system path, is controlled through action inputs as listed in the next section.
-
-* [fcli](https://github.com/fortify/fcli)
-* [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm)
-* [FoDUploader](https://github.com/fod-dev/fod-uploader-java)
-* [FortifyVulnerabilityExporter](https://github.com/fortify/FortifyVulnerabilityExporter)
-* [FortifyBugTrackerUtility](https://github.com/fortify-ps/FortifyBugTrackerUtility)
 
 ### Action inputs
 
-**`export-path`** - OPTIONAL    
-Whether to add the installed tools to the system PATH variable. Allowed values: `true` (default) or `false`
+This section lists the inputs that can be specified in the `with:` clause for this GitHub Action. Any inputs marked in **bold** are required.
 
-**`fcli`** - OPTIONAL    
-The fcli version to install. Allowed values: `skip` (default value, do not install fcli), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.0` and `2.0.0` are semantically the same.
-
-**`sc-client`** - OPTIONAL    
-The ScanCentral Client version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `23.1` will install the latest known `23.1.y` patch version. Version may be specified either with or without the `v` prefix, for example `v23.1` and `23.1` are semantically the same.
-
-**`fod-uploader`** - OPTIONAL    
-The FoDUploader version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v5` will install the latest known `5.x.y` version. Version may be specified either with or without the `v` prefix, for example `v5.4.0` and `5.4.0` are semantically the same.
-
-**`vuln-exporter`** - OPTIONAL    
-The FortifyVulnerabilityExporter version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.4` and `2.0.4` are semantically the same.
-
-**`bugtracker-utility`** - OPTIONAL    
-The FortifyBugTrackerUtility version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v4` will install the latest known `4.x` version. Version may be specified either with or without the `v` prefix, for example `v4.12` and `4.12` are semantically the same.
-
-### Action outputs
-
-For each tool being installed, the action outputs several environment variables for use by later workflow steps.
-
-**`PATH`**    
-If the `export-path` action input was set to `true` (default), the bin-directory of the installed tool will be added to the workflow `PATH` environment variable.
-
-**`<TOOL_NAME>_INSTALL_DIR`**    
-Directory where the corresponding tool was installed. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_INSTALL_DIR`.
-
-**`<TOOL_NAME>_BIN_DIR`**    
-Bin-directory that holds the executables for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_BIN_DIR`.
-
-**`<TOOL_NAME>_CMD`**    
-Fully qualified path to the (primary) executable/script for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_CMD`.
-
-### Sample usage
-
-The sample workflow below demonstrates how to configure the action for installing the various Fortify tools and how to run these tools. Some notes:
-
-* The `export-path` and `bugtracker-utility` inputs are set to their default values, and thus could have been omitted.
-* The action supports semantic versioning, so the `vuln-exporter` input will install the latest known v2.x.y version of FortifyVulnerabilityExporter.
-
-```yaml
-    steps:    
-      - name: Setup Fortify tools
-        uses: fortify/github-action/setup@v1
-        with:
-          export-path: true
-          fcli: latest
-          sc-client: 23.1.0
-          fod-uploader: latest
-          vuln-exporter: v2
-          bugtracker-utility: skip
-      - name: Run fcli from PATH
-        run: fcli -V
-      - name: Run fcli using FCLI_CMD environment variable
-        run: ${FCLI_CMD} -V
-```
-
-<!-- END-INCLUDE:action-setup.md -->
-
-
-
-<a name="fortify-github-action-package"></a>
-
-## fortify/github-action/package
-
-
-<!-- START-INCLUDE:action-package.md -->
-
-This action packages application source code using [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm). The output package is saved as `package.zip`.
+| Action input | Description |
+| :--- | :--- |
+| sast&#8209;scan | If set to `true`, run a static scan. If not specified or set to `false`, no static scan will be run. |
+| debricked&#8209;sca&#8209;scan | If set to `true`, run Debricked Software Composition Analysis. If not specified or set to `false`, no software composition analysis will be performed. |
 
 ### Action environment variable inputs
 
+This section lists the environment variables that can be specified in the `env:` clause for this GitHub Action. Any environment variables marked in **bold** are required.
 
-<!-- START-INCLUDE:env-package.md -->
+| Environment variable | Description |
+| :--- | :--- |
+|**SSC_URL**|Fortify Software Security Center URL, for example https://ssc.customer.fortifyhosted.net/. Note: Using GitHub Secrets to define this URL may cause links back to SSC to be rendered incorrectly, for example in GitHub Action workflow summaries. It is highly recommended to either hard-code the URL in your workflow, or to use [GitHub Variables](https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables) instead of GitHub Secrets.|
+|**SSC_TOKEN**|Required when authenticating with an SSC token (recommended). Most actions should work fine with a `CIToken`.|
+|**SSC_USER<br/>SSC_PASSWORD**|Required when authenticating with SSC user credentials.|
+|**SC_SAST_TOKEN**|ScanCentral SAST Client Authentication Token for authenticating with ScanCentral SAST Controller. This environment variable is required when running a ScanCentral SAST scan.|
+|SSC_LOGIN_EXTRA_OPTS<br/>EXTRA_SSC_LOGIN_OPTS|Extra SSC login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli ssc session login` documentation](https://fortify.github.io/fcli/v3.13.1//manpage/fcli-ssc-session-login.html). Note that `EXTRA_SSC_LOGIN_OPTS` is deprecated; please use `SSC_LOGIN_EXTRA_OPTS`.|
+|**DEBRICKED_TOKEN**|Required when performing a Debricked Software Composition Analysis scan; see the [Generate access token](https://docs.debricked.com/product/administration/generate-access-token) section in the Debricked documentation for details on how to generate this token.|
+|SSC_APPVERSION|Fortify SSC application version to use with this action. This can be specified either as a numeric application version id, or by providing application and version name in the format `<app-name>:<version-name>`. Default value is based on repository and branch name, for example `myOrg/myRepo:myBranch`.|
+|DO_SETUP<br/>SETUP_ACTION<br/>SETUP_EXTRA_OPTS|If `DO_SETUP` is set to `true` (implied if any of the other two `SETUP_*` variables are set), the SSC application version will be automatically created if they do not yet exist, using the fcli-provided [`setup-appversion`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_setup_appversion) or, if specified, the custom fcli action specified through `SETUP_ACTION`. Extra options for the fcli action can be passed through the `SETUP_EXTRA_OPTS` environment variable, for example to copy state from an existing application version using the `--copy-from` option, or to allow an unsigned custom action to be used. Note that if setup is enabled, `SSC_APPVERSION` must be configured with a qualified application version name; you cannot use application version id. Please see the [SSC Fcli Actions](#ssc-fcli-actions) section below for more details.|
+| SC_CLIENT_VERSION | By default, this action uses ScanCentral Client 25.4.0 for packaging. This environment variable allows for overriding the ScanCentral Client version used for packaging. |
+|DO_PACKAGE_DEBUG| If set to true, this will enable the `-debug` option on the `scancentral` command, and store both ScanCentral logs and the `package.zip` file as job artifacts.|
+|PACKAGE_EXTRA_OPTS<br/>EXTRA_PACKAGE_OPTS| By default, this action runs `scancentral package -o package.zip` to package application source code. Use `PACKAGE_EXTRA_OPTS` to specify additional packaging options, for example `PACKAGE_EXTRA_OPTS: -bt mvn -bf <custom build file>`. See [Command-line options for the package command](https://www.microfocus.com/documentation/fortify-software-security-center/2540/sc-sast-ugd-html-25.4.0/doc/2404_25.4/home.html) for more information on available options. Note that `EXTRA_PACKAGE_OPTS` is deprecated; please use `PACKAGE_EXTRA_OPTS`.|
+|SC_SAST_SENSOR_VERSION|Version of the ScanCentral SAST sensor on which the scan should be performed; see [`fcli sc-sast scan start` documentation](https://fortify.github.io/fcli/v3.13.1//manpage/fcli-sc-sast-scan-start.html) for details.|
+|SC_SAST_SCAN_EXTRA_OPTS<br/>EXTRA_SC_SAST_SCAN_OPTS|Extra ScanCentral SAST scan options; see [`fcli sc-sast scan start` documentation](https://fortify.github.io/fcli/v3.13.1//manpage/fcli-sc-sast-scan-start.html). Note that `EXTRA_SC_SAST_SCAN_OPTS` is deprecated; please use `SC_SAST_SCAN_EXTRA_OPTS`.|
+| DO_WAIT | By default, this action will not wait until scans have been completed. To have the workflow wait until all scans have been completed, set the `DO_WAIT` environment variable to `true`. Note that some other environment variables imply `DO_WAIT`, for example when exporting vulnerability data or generating job summaries. This behavior is documented in the applicable environment variable descriptions. |
+|DO_POLICY_CHECK<br/>CHECK_POLICY_ACTION<br/>CHECK_POLICY_EXTRA_OPTS|If `DO_POLICY_CHECK` is set to `true` (implied if any of the other two `CHECK_POLICY_*` variables are set, and implies `DO_WAIT`), a policy check will be run after scan completion using the fcli-provided [SSC `check-policy`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_check_policy) or, if specified, the custom fcli action specified through `CHECK_POLICY_ACTION`. Extra options for a custom fcli action can be passed through the `CHECK_POLICY_EXTRA_OPTS` environment variable, which may include fcli options to allow unsigned custom actions to be used. Please see the [SSC Fcli Actions](#ssc-fcli-actions) section below for more details.|
+|DO_JOB_SUMMARY<br/>JOB_SUMMARY_ACTION<br/>JOB_SUMMARY_EXTRA_OPTS|If `DO_JOB_SUMMARY` is set to `true` (implied if any of the other two `JOB_SUMMARY_*` variables are set, and implies `DO_WAIT`), a job summary listing scan status and issue counts will be generated using the fcli-provided [SSC `appversion-summary`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_appversion_summary) or, if specified, the custom fcli action specified through `JOB_SUMMARY_ACTION`. Extra options for the fcli action can be passed through the `JOB_SUMMARY_EXTRA_OPTS` environment variable, for example to allow an unsigned custom action to be used or to specify an SSC filter set. Please see the [SSC Fcli Actions](#ssc-fcli-actions) section below for more details. |
+| DO_EXPORT<br/>EXPORT_ACTION<br/>EXPORT_EXTRA_OPTS | If `DO_EXPORT` is set to `true` (implied if any of the other two `EXPORT_*` variables are set, and implies `DO_WAIT`), this GitHub Action will will export scan results to the GitHub Security Code Scanning dashboard using the fcli-provided [SSC `github-sast-report`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_github_sast_report) action or, if specified, the custom fcli action specified through `EXPORT_ACTION`. Extra options for the fcli action can be passed through the `EXPORT_EXTRA_OPTS` environment variable, for example to to allow an unsigned custom action to be used or to specify an alternative SSC filter set. Please see the [SSC Fcli Actions](#ssc-fcli-actions) section below for more details.<br/><br/>Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository. GitHub only supports importing SAST results; other results will not exported to GitHub. |
+|(PREVIEW)<br/>DO_PR_COMMENT<br/>PR_COMMENT_ACTION<br/>PR_COMMENT_EXTRA_OPTS|If `DO_PR_COMMENT` is set to `true` (implied if any of the other two `PR_COMMENT_*` variables are set, and implies `DO_WAIT`), a pull request comment listing new, re-introduced and removed issues will be generated using the fcli-provided [SSC `github-pr-comment`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_github_pr_comment) action or, if specified, the custom fcli action specified through `PR_COMMENT_ACTION`. Extra options for the fcli action can be passed through the `PR_COMMENT_EXTRA_OPTS` environment variable, for example to allow an unsigned custom action to be used or to specify a different SSC filter set. Please see the [SSC Fcli Actions](#ssc-fcli-actions) and [SSC Pull Request Comments](#ssc-pull-request-comments) sections below for more details.|
+| TOOL_DEFINITIONS | Fortify tool definitions are used by this GitHub Action to determine available versions, download location and other details of various Fortify-related tools, as required for action execution. By default, the Fortify-provided tool definitions hosted at https://github.com/fortify/tool-definitions/releases/tag/v1 will be used.<br/><br/>This environment variable allows for overriding the default tool definitions, pointing to either a URL or local (workspace) file. For example, if GitHub workflows are not allowed to download tools from their public internet locations, customers may host the tool installation bundles on an internal server, together with a customized tool definitions bundle that lists the alternative download URLs. |
 
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL   
-By default, this action runs `scancentral package -o package.zip` to package application source code. Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
 
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
+<!-- START-INCLUDE:action/_generic/ssc/ssc-fcli-actions.md -->
 
-<!-- END-INCLUDE:env-package.md -->
+### SSC Fcli Actions
 
+<!-- Note that similar instructions are provided for FoD in fod-fcli-actions.md; when updating these instructions, fod-fcli-actions.md will likely need to be updated accordingly -->
 
-### Sample usage
 
-The sample workflow below demonstrates how to configure the action for running a SAST scan on FoD.
+<!-- START-INCLUDE:action/_generic/fcli-actions.md -->
 
-```yaml
-    steps:  
-      - name: Check out source code
-        uses: actions/checkout@v4  
-      - name: Package source code
-        uses: fortify/github-action/package@v1
-        env:
-          # EXTRA_PACKAGE_OPTS: -bf custom-pom.xml
-```
+As indicated in the [Action environment variable inputs](#action-environment-variable-inputs) section above, this GitHub Action utilizes one or more fcli actions to perform certain activities. These fcli-provided actions are used as building blocks that can be re-used across different CI/CD platforms to provide consistent behavior across those platforms. This GitHub Action also provides the ability to override the default built-in fcli actions with custom fcli actions, allowing for rich customization capabilities. For example, such custom fcli actions could define different default values for some action options, perform some additional activities, and/or provide fully customized behavior.
 
-<!-- END-INCLUDE:action-package.md -->
+For more information on fcli actions and custom action development, please see the [fcli action documentation](https://fortify.github.io/fcli/v3.13.1/#_actions). Such custom actions may be hosted either on the local file system (for example stored in your source code repository) or some remote location; the `*_ACTION` environment variables may point to either a local file or URL. To easily share custom actions across multiple pipelines, you may want to consider hosting these in a dedicated source code repository that's accessible by all pipelines. This provides an easy hosting location, and allows for easy maintenance of such custom actions.
 
+<!-- END-INCLUDE:action/_generic/fcli-actions.md -->
 
 
-<a name="fortify-github-action-fod-sast-scan"></a>
+When developing custom actions, please note that the GitHub Action expects certain action parameters to be supported by such a custom action. A common example is the `--av` / `--appversion` command-line option, which the GitHub Action will automatically pass to most or all fcli actions to specify the SSC application version to operate on. What command-line options are automatically passed to the fcli action may also depend on GitHub Action configuration. If the custom action doesn't support those action parameters, the action invocation will fail. You will also need to consider any options explicitly configured through the `*_EXTRA_OPTS` environment variable; for backward compatibility with existing GitHub Action workflows that have been configured with some extra action options, you should be careful with removing or renaming any action parameters.
 
-## fortify/github-action/fod-sast-scan
+Future versions of this documentation may provide more details on what command-line options are automatically passed to fcli actions. Until then, you'll need to review workflow logs and/or GitHub Action source code to identify what action parameters are being automatically passed by the GitHub Action. Alternatively, you may want to consider simply duplicating all action parameters from the fcli built-in action, even if some of those parameters will not be used by your custom action.
 
+<!-- END-INCLUDE:action/_generic/ssc/ssc-fcli-actions.md -->
 
-<!-- START-INCLUDE:action-fod-sast-scan.md -->
 
-This action performs a SAST scan on Fortify on Demand (FoD). If software composition analysis of open source has been purchased and configured on the applicable release, this action can be used to perform a combined SAST and SCA (open source) scan. 
 
-The SAST and optional open source scan performed by this action consists of the following steps:
+<!-- START-INCLUDE:action/_generic/ssc/ssc-pr.md -->
 
-* Login to FoD
-* Package application source code using ScanCentral Client
-* Submit the source code package to be scanned to FoD
-* Optionally wait for the scan to complete
-* Optionally export scan results to the GitHub Code Scanning dashboard
+### SSC Pull Request Comments
 
-Before running this action, please ensure that the appropriate release has been created on FoD and has been configured for SAST scans. Future versions of this action may add support for automating app/release creation and scan setup. If open source scanning has been enabled in the FoD SAST scan configuration, be sure to pass the `-oss` option through the `EXTRA_PACKAGE_OPTS` environment variable.
+<!-- Note that similar instructions are provided for FoD in fod-pr.md; when updating these instructions, fod-pr.md will likely need to be updated accordingly -->
 
-### Action environment variable inputs
+This section provides more information on Pull Request Comments that will be generated if `DO_PR_COMMENT` is set to `true`. This information is based on the fcli-provided [SSC `github-pr-comment`](https://fortify.github.io/fcli/v3.13.1/ssc-actions.html#_github_pr_comment) action and may not apply when using a custom fcli action through `PR_COMMENT_ACTION`.
 
+**Important note:** Pull Request comments are currently considered preview functionality. Configuration settings, behavior and output may significantly change in future GitHub Action releases as we work on improving and fine-tuning our PR decoration capabilities.
 
-<!-- START-INCLUDE:env-fod-sast-scan.md -->
+Pull request comments will only be generated under the following conditions:
 
+* Standard `GITHUB_REF_NAME` environment variable points to a pull request, which is only the case on GitHub `pull_request` triggers and not for example `manual` triggers (even if the branch is associated with a current pull request).
+* All other standard GitHub environment variables like `GITHUB_TOKEN`, `GITHUB_REPOSITORY` and `GITHUB_SHA` are set.
 
+PR comments are generated by comparing scan results from the current GitHub Action run against the previous scan in the same application version; it won't detect any new/removed issues from older scans. For best results, you should configure your workflow as follows:
 
-<!-- START-INCLUDE:env-fod-login.md -->
+- For any branches for which you might want to generate PR comments, have the workflow trigger only on `pull_request` events. Note that you can have a single workflow that is triggered on both `push` events for your main branch, and only `pull_request` events for all other branches.
+- Don't set `SSC_APPVERSION`, to use the default value that corresponds to repository and branch name.
+- Set `DO_SETUP` to `true`, to allow a branch-specific application version to be automatically created.
+- Include `--copy-from` option in `SETUP_EXTRA_OPTS` to copy state from the application version that represents the PR target branch or your main branch into the newly created application version.
 
+With a setup like this, whenever a new PR is created, the GitHub Action will:
+- Create a new application version named `<repository owner>/<repository name>:<branch name>`.
+- Copy state from the application version identified by the `--copy-from` option to this new application version.
+- Run a new scan of the branch associated with the current PR, and upload results to the application version created above.
+- Generate a PR comment listing new and removed issues, based on comparing the results of the new scan that was run in the previous step against the scan results that were copied from the application version identified by the `--copy-from` option.
 
-<!-- START-INCLUDE:env-fod-connection.md -->
+If any subsequent updates are pushed to the PR and the workflow is also being triggered on PR update events, the GitHub Action will run a new scan of the branch associated with the PR, publish results to the existing branch-specific application version, and generate a new PR comment that shows any new/removed issues in the new scan compared to the previous scan for the same branch/PR.
 
-**`FOD_URL`** - REQUIRED   
-Fortify on Demand URL, for example https://ams.fortify.com
+<!-- END-INCLUDE:action/_generic/ssc/ssc-pr.md -->
 
-**`FOD_CLIENT_ID` & `FOD_CLIENT_SECRET`** - REQUIRED*    
-Required when authenticating with an API key: FoD Client ID (API key) and Secret (API secret).
 
-**`FOD_TENANT`, `FOD_USER` & `FOD_PASSWORD`** - REQUIRED*    
-Required when authenticating with user credentials: FoD tenant, user and password. It's recommended to use a Personal Access Token instead of an actual user password.
 
-<!-- END-INCLUDE:env-fod-connection.md -->
+## Building blocks for custom workflows
 
+This GitHub Action provides a lot of flexibility with regards to what operations to run as controlled through the various `DO_*` environment variables, and also allows for customizing some of these operations by utilizing custom fcli actions through the `*_ACTION` environment variables. However, there may be situations where the standard workflow provided by this GitHub Action doesn't meet your needs, for example if you need to run Dynamic or Mobile scans.
 
-**`EXTRA_FOD_LOGIN_OPTS`** - OPTIONAL   
-Extra FoD login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli fod session login` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-fod-session-login.html)
+The modular implementation of this GitHub Action allows for implementing custom workflows based on the various re-usable sub-actions available in this repository. The following sub-actions that can be used as building blocks for custom workflows are currently available for public use:
 
-<!-- END-INCLUDE:env-fod-login.md -->
+| Action | Description |
+| :---   | :---        |
+| [fortify/github&#8209;action/setup](https://github.com/fortify/github-action/tree/v2/setup#readme) | This sub-action allows for installing various Fortify tools like fcli or ScanCentral Client for later use in your GitHub Actions workflow. This allows for implementing fully customized workflows that can easily utilize the various Fortify tools to interact with Fortify products and Debricked. |
+| [fortify/github&#8209;action/package](https://github.com/fortify/github-action/tree/v2/package#readme) | This sub-action can be used to easily package your source code for static scans, with the action handling low-level details like installation of ScanCentral Client and required Java version. |
+| [fortify/github&#8209;action/fod&#8209;export](https://github.com/fortify/github-action/tree/v2/fod-export#readme) | This sub-action allows for exporting vulnerability data from Fortify on Demand to the GitHub Security dashboard, with the action handling low-level details like installing the necessary Fortify tools, exporting the vulnerability data, and uploading this data to GitHub. |
+| [fortify/github&#8209;action/ssc&#8209;export](https://github.com/fortify/github-action/tree/v2/ssc-export#readme) | This sub-action allows for exporting vulnerability data from SSC to the GitHub Security dashboard, with the action handling low-level details like installing the necessary Fortify tools, exporting the vulnerability data, and uploading this data to GitHub. |
 
+The `fortify/github-action` repository also provides the publicly available sub-actions listed in the table below, but these provide the full scan workflows as provided by this GitHub Action, with the top-level `fortify/github-action` simply invoking one of these sub-actions based on action inputs and environment variables. As such, these sub-actions are not meant to provide re-usable building blocks, but it may be useful to look at the implementations of these sub-actions if you want to re-use any of their functionality in your custom workflows.
 
+| Action | Description |
+| :---   | :---        |
+| [fortify/github&#8209;action/fod&#8209;sast&#8209;scan](https://github.com/fortify/github-action/tree/v2/fod-sast-scan#readme) | Run a Fortify on Demand SAST scan. |
+| [fortify/github&#8209;action/sc&#8209;sast&#8209;scan](https://github.com/fortify/github-action/tree/v2/sc-sast-scan#readme) | Run a ScanCentral SAST scan and optional Debricked scan. |
+| [fortify/github&#8209;action/ssc&#8209;debricked&#8209;scan](https://github.com/fortify/github-action/tree/v2/ssc-debricked-scan#readme) | Run a Debricked-only scan and import scan results into SSC. |
 
-<!-- START-INCLUDE:env-fod-release.md -->
+These actions utilize the re-usable building blocks mentioned above, in combination with several sub-actions that are meant for internal use only. However, the source code of these internal-only sub-actions is publicly available, allowing you to gain a better understanding of how these are used to implement the functionality provided by `fortify/github-action` and potentially re-use some of the ideas or code in your custom workflows. In particular, the `bash` scripts provided by the [`fortify/github-action/internal/run-script`](https://github.com/fortify/github-action/tree/v2/internal/run-script/scripts) provide some of the core functionality provided by this GitHub Action.
 
-**`FOD_RELEASE`** - OPTIONAL    
-Fortify on Demand release to use with this action. This can be specified either as a numeric release id, `<app-name>:<release-name>` (for non-microservices applications) or `<app-name>:<microservice-name>:<release-name>` (for microservices applications). Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
-
-<!-- END-INCLUDE:env-fod-release.md -->
-
-
-
-<!-- START-INCLUDE:env-fod-package.md -->
-
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL     
-By default, this action runs `scancentral package -o package.zip` to package application source code. The `EXTRA_PACKAGE_OPTS` environment variable can be used to specify additional packaging options. 
-
-If FoD Software Composition Analysis has been purchased and configured on the applicable release, you'll need to pass the `-oss` option through this environment variable to generate and package the additional dependency files required. 
-
-Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient to properly package application source code. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
-
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
-
-<!-- END-INCLUDE:env-fod-package.md -->
-
-
-**`EXTRA_FOD_SAST_SCAN_OPTS`** - OPTIONAL    
-Extra FoD SAST scan options; see [`fcli fod sast-scan start` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-fod-sast-scan-start.html)
-
-
-<!-- START-INCLUDE:env-wait-export.md -->
-
-**`DO_WAIT`** - OPTIONAL    
-By default, this action will not wait until the scan has been completed. To have the workflow wait until the scan has been completed, set the `DO_WAIT` environment variable to `true`. Note that `DO_WAIT` is implied if `DO_EXPORT` is set to `true`; see below.
-
-**`DO_EXPORT`** - OPTIONAL    
-If set to `true`, this action will export scan results to the GitHub Security Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-<!-- END-INCLUDE:env-wait-export.md -->
-
-
-<!-- END-INCLUDE:env-fod-sast-scan.md -->
-
-
-### Sample usage
-
-The sample workflow below demonstrates how to configure the action for running a SAST scan on FoD.
-
-```yaml
-    steps:    
-      - name: Check out source code
-        uses: actions/checkout@v4  
-      - name: Run FoD SAST Scan
-        uses: fortify/github-action/fod-sast-scan@v1
-        env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{secrets.FOD_TENANT}}
-          FOD_USER: ${{secrets.FOD_USER}}
-          FOD_PASSWORD: ${{secrets.FOD_PAT}}
-          # EXTRA_FOD_LOGIN_OPTS: --socket-timeout=60s
-          # FOD_RELEASE: MyApp:MyRelease
-          # EXTRA_PACKAGE_OPTS: -oss
-          # DO_WAIT: true
-          # DO_EXPORT: true
-```
-
-<!-- END-INCLUDE:action-fod-sast-scan.md -->
-
-
-
-<a name="fortify-github-action-fod-export"></a>
-
-## fortify/github-action/fod-export
-
-
-<!-- START-INCLUDE:action-fod-export.md -->
-
-This action exports the latest vulnerability data from an FoD release to the GitHub Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-### Action environment variable inputs
-
-
-<!-- START-INCLUDE:env-fod-connection.md -->
-
-**`FOD_URL`** - REQUIRED   
-Fortify on Demand URL, for example https://ams.fortify.com
-
-**`FOD_CLIENT_ID` & `FOD_CLIENT_SECRET`** - REQUIRED*    
-Required when authenticating with an API key: FoD Client ID (API key) and Secret (API secret).
-
-**`FOD_TENANT`, `FOD_USER` & `FOD_PASSWORD`** - REQUIRED*    
-Required when authenticating with user credentials: FoD tenant, user and password. It's recommended to use a Personal Access Token instead of an actual user password.
-
-<!-- END-INCLUDE:env-fod-connection.md -->
-
-
-
-<!-- START-INCLUDE:env-fod-release.md -->
-
-**`FOD_RELEASE`** - OPTIONAL    
-Fortify on Demand release to use with this action. This can be specified either as a numeric release id, `<app-name>:<release-name>` (for non-microservices applications) or `<app-name>:<microservice-name>:<release-name>` (for microservices applications). Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
-
-<!-- END-INCLUDE:env-fod-release.md -->
-
-
-### Sample usage
-
-The sample workflow below demonstrates how to configure the action for exporting FoD SAST vulnerability data to the GitHub Security Code Scanning dashboard.
-
-```yaml
-    steps:    
-      - name: Export FoD vulnerability data to GitHub
-        uses: fortify/github-action/fod-export@v1
-        env:
-          FOD_URL: https://ams.fortify.com
-          FOD_TENANT: ${{secrets.FOD_TENANT}}
-          FOD_USER: ${{secrets.FOD_USER}}
-          FOD_PASSWORD: ${{secrets.FOD_PAT}}
-          # FOD_RELEASE: MyApp:MyRelease
-```
-
-<!-- END-INCLUDE:action-fod-export.md -->
-
-
-
-<a name="fortify-github-action-sc-sast-scan"></a>
-
-## fortify/github-action/sc-sast-scan
-
-
-<!-- START-INCLUDE:action-sc-sast-scan.md -->
-
-This action performs a SAST scan on ScanCentral SAST, consisting of the following steps:
-
-* Login to ScanCentral SAST Controller
-* Package application source code using ScanCentral Client
-* Submit the source code package to be scanned to ScanCentral SAST Controller
-* Optionally wait for the scan to complete
-* Optionally export scan results to the GitHub Code Scanning dashboard
-
-Before running this action, please ensure that the appropriate application version has been created on SSC. Future versions of this action may add support for automating application version creation.
-
-### Action environment variable inputs
-
-
-<!-- START-INCLUDE:env-sc-sast-scan.md -->
-
-
-
-<!-- START-INCLUDE:env-sc-sast-login.md -->
-
-
-<!-- START-INCLUDE:env-ssc-connection.md -->
-
-**`SSC_URL`** - REQUIRED   
-Fortify Software Security Center URL, for example https://ssc.customer.fortifyhosted.net/
-
-**`SSC_TOKEN`** - REQUIRED*   
-Required when authenticating with an SSC token (recommended). Most actions should work fine with a `CIToken`.
-
-**`SSC_USER` & `SSC_PASSWORD`** - REQUIRED*   
-Required when authenticating with SSC user credentials.
-
-<!-- END-INCLUDE:env-ssc-connection.md -->
-
-
-**`SC_SAST_CLIENT_AUTH_TOKEN`** - REQUIRED    
-Required: ScanCentral SAST Client Authentication Token for authenticating with ScanCentral SAST Controller.
-
-**`EXTRA_SC_SAST_LOGIN_OPTS`** - OPTIONAL    
-Extra ScanCentral SAST login options, for example for disabling SSL checks or changing connection time-outs; see [`fcli sc-sast session login` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-sc-sast-session-login.html).
-
-<!-- END-INCLUDE:env-sc-sast-login.md -->
-
-
-
-<!-- START-INCLUDE:env-ssc-appversion.md -->
-
-**`SSC_APPVERSION`** - OPTIONAL   
-Fortify SSC application version to use with this action. This can be specified either as a numeric application version id, or by providing application and version name in the format `<app-name>:<version-name>`. Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
-
-<!-- END-INCLUDE:env-ssc-appversion.md -->
-
-
-
-<!-- START-INCLUDE:env-package.md -->
-
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL   
-By default, this action runs `scancentral package -o package.zip` to package application source code. Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
-
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
-
-<!-- END-INCLUDE:env-package.md -->
-
-
-**`EXTRA_SC_SAST_SCAN_OPTS`** - OPTIONAL    
-Extra ScanCentral SAST scan options; see [`fcli sc-sast scan start` documentation](https://fortify.github.io/fcli/v2.0.0//manpage/fcli-sc-sast-scan-start.html)
-
-
-<!-- START-INCLUDE:env-wait-export.md -->
-
-**`DO_WAIT`** - OPTIONAL    
-By default, this action will not wait until the scan has been completed. To have the workflow wait until the scan has been completed, set the `DO_WAIT` environment variable to `true`. Note that `DO_WAIT` is implied if `DO_EXPORT` is set to `true`; see below.
-
-**`DO_EXPORT`** - OPTIONAL    
-If set to `true`, this action will export scan results to the GitHub Security Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-<!-- END-INCLUDE:env-wait-export.md -->
-
-
-<!-- END-INCLUDE:env-sc-sast-scan.md -->
-
-
-### Sample usage
-
-The sample workflow below demonstrates how to configure the action for running a SAST scan on ScanCentral SAST.
-
-```yaml
-    steps:    
-      - name: Check out source code
-        uses: actions/checkout@v4  
-      - name: Run ScanCentral SAST Scan
-        uses: fortify/github-action/sc-sast-scan@v1
-        env:
-          SSC_URL: ${{secrets.SSC_URL}}
-          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
-          SC_SAST_CLIENT_AUTH_TOKEN: ${{secrets.CLIENT_AUTH_TOKEN}}
-          # EXTRA_SC_SAST_LOGIN_OPTS: --socket-timeout=60s
-          # SSC_APPVERSION: MyApp:MyVersion
-          # EXTRA_PACKAGE_OPTS: -bf custom-pom.xml
-          # DO_WAIT: true
-          # DO_EXPORT: true
-```
-
-<!-- END-INCLUDE:action-sc-sast-scan.md -->
-
-
-
-<a name="fortify-github-action-ssc-export"></a>
-
-## fortify/github-action/ssc-export
-
-
-<!-- START-INCLUDE:action-ssc-export.md -->
-
-This action exports the latest vulnerability data from an SSC application version to the GitHub Code Scanning dashboard. Note that this may require a [GitHub Advanced Security](https://docs.github.com/en/get-started/learning-about-github/about-github-advanced-security) subscription, unless you're running this action on a public github.com repository.
-
-### Action environment variable inputs
-
-
-<!-- START-INCLUDE:env-ssc-connection.md -->
-
-**`SSC_URL`** - REQUIRED   
-Fortify Software Security Center URL, for example https://ssc.customer.fortifyhosted.net/
-
-**`SSC_TOKEN`** - REQUIRED*   
-Required when authenticating with an SSC token (recommended). Most actions should work fine with a `CIToken`.
-
-**`SSC_USER` & `SSC_PASSWORD`** - REQUIRED*   
-Required when authenticating with SSC user credentials.
-
-<!-- END-INCLUDE:env-ssc-connection.md -->
-
-
-
-<!-- START-INCLUDE:env-ssc-appversion.md -->
-
-**`SSC_APPVERSION`** - OPTIONAL   
-Fortify SSC application version to use with this action. This can be specified either as a numeric application version id, or by providing application and version name in the format `<app-name>:<version-name>`. Default value is [`<github.action_repository>:<github.action_ref>`](https://docs.github.com/en/actions/learn-github-actions/contexts#github-context), for example `myOrg/myRepo:myBranch`.
-
-<!-- END-INCLUDE:env-ssc-appversion.md -->
-
-
-### Sample usage
-
-The sample workflow below demonstrates how to configure the action for exporting SSC SAST vulnerability data to the GitHub Security Code Scanning dashboard.
-
-```yaml
-    steps:    
-      - name: Export SSC vulnerability data to GitHub
-        uses: fortify/github-action/ssc-export@v1
-        env:
-          SSC_URL: ${{secrets.SSC_URL}}
-          SSC_TOKEN: ${{secrets.SSC_TOKEN}}
-          # SSC_APPVERSION: MyApp:MyVersion
-```
-
-<!-- END-INCLUDE:action-ssc-export.md -->
-
-
-<!-- END-INCLUDE:repo-readme.md -->
+<!-- END-INCLUDE:action/_root/readme.md -->
 
 
 
@@ -716,13 +345,11 @@ The sample workflow below demonstrates how to configure the action for exporting
 
 ## Support
 
-The only warranties for products and services of Open Text and its affiliates and licensors (“Open Text”) are as may be set forth in the express warranty statements accompanying such products and services. Nothing herein should be construed as constituting an additional warranty. Open Text shall not be liable for technical or editorial errors or omissions contained herein. The information contained herein is subject to change without notice.
+For general assistance, please join the [Fortify Community](https://community.opentext.com/cybersec/fortify/) to get tips and tricks from other users and the OpenText team.
+ 
+OpenText customers can contact our world-class [support team](https://www.opentext.com/support/opentext-enterprise/) for questions, enhancement requests and bug reports. You can also raise questions and issues through your OpenText Fortify representative like Customer Success Manager or Technical Account Manager if applicable.
 
-The software is provided "as is" and is not supported through the regular OpenText Support channels. Support requests may be submitted through the [GitHub Issues](https://github.com/fortify-ps/github-action/issues) page for this repository. A (free) GitHub account is required to submit new issues or to comment on existing issues. 
-
-Support requests created through the GitHub Issues page may include bug reports, enhancement requests and general usage questions. Please avoid creating duplicate issues by checking whether there is any existing issue, either open or closed, that already addresses your question, bug or enhancement request. If an issue already exists, please add a comment to provide additional details if applicable.
-
-Support requests on the GitHub Issues page are handled on a best-effort basis; there is no guaranteed response time, no guarantee that reported bugs will be fixed, and no guarantee that enhancement requests will be implemented. If you require dedicated support for this and other Fortify software, please consider purchasing OpenText Fortify Professional Services. OpenText Fortify Professional Services can assist with general usage questions, integration of the software into your processes, and implementing customizations, bug fixes, and feature requests (subject to feasibility analysis). Please contact your OpenText Sales representative or fill in the [Professional Services Contact Form](https://www.microfocus.com/en-us/cyberres/contact/professional-services) to obtain more information on pricing and the services that OpenText Fortify Professional Services can provide.
+You may also consider raising questions or issues through the [GitHub Issues page](https://github.com/fortify/github-action/issues) (if available for this repository), providing public visibility and allowing anyone (including all contributors) to review and comment on your question or issue. Note that this requires a GitHub account, and given public visibility, you should refrain from posting any confidential data through this channel. 
 
 <!-- END-INCLUDE:h2.support.md -->
 

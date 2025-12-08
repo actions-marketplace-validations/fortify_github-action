@@ -1,4 +1,4 @@
-# fortify/github-action/setup@v1 
+# fortify/github-action/setup@v2 
 
 
 <!-- START-INCLUDE:p.marketing-intro.md -->
@@ -9,51 +9,37 @@
 
 
 
-<!-- START-INCLUDE:action-setup.md -->
+<!-- START-INCLUDE:action/setup/readme.md -->
 
 This action allows for setting up the Fortify tools listed below. Which tools and which versions to install, and whether to add the tool bin-directories to the system path, is controlled through action inputs as listed in the next section.
 
 * [fcli](https://github.com/fortify/fcli)
-* [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm)
+* [Debricked CLI](https://github.com/debricked/cli)
+* [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2540/sc-sast-ugd-html-25.4.0/doc/2404_25.4/home.html)
 * [FoDUploader](https://github.com/fod-dev/fod-uploader-java)
 * [FortifyVulnerabilityExporter](https://github.com/fortify/FortifyVulnerabilityExporter)
 * [FortifyBugTrackerUtility](https://github.com/fortify-ps/FortifyBugTrackerUtility)
 
-### Action inputs
 
-**`export-path`** - OPTIONAL    
-Whether to add the installed tools to the system PATH variable. Allowed values: `true` (default) or `false`
+<!-- START-INCLUDE:action/_generic/prerequisites-h3.md -->
 
-**`fcli`** - OPTIONAL    
-The fcli version to install. Allowed values: `skip` (default value, do not install fcli), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.0` and `2.0.0` are semantically the same.
+### Prerequisites
 
-**`sc-client`** - OPTIONAL    
-The ScanCentral Client version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `23.1` will install the latest known `23.1.y` patch version. Version may be specified either with or without the `v` prefix, for example `v23.1` and `23.1` are semantically the same.
 
-**`fod-uploader`** - OPTIONAL    
-The FoDUploader version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v5` will install the latest known `5.x.y` version. Version may be specified either with or without the `v` prefix, for example `v5.4.0` and `5.4.0` are semantically the same.
+<!-- START-INCLUDE:action/_generic/prerequisites.md -->
 
-**`vuln-exporter`** - OPTIONAL    
-The FortifyVulnerabilityExporter version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.4` and `2.0.4` are semantically the same.
+This action assumes the standard software packages as provided by GitHub-hosted runners to be available. If you are using self-hosted runners, you may need to install some of these software packages in order to successfully use this action. In particular, not having the following software installed is known to cause issues when running `fortify/github-action` or one of its sub-actions:
 
-**`bugtracker-utility`** - OPTIONAL    
-The FortifyBugTrackerUtility version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v4` will install the latest known `4.x` version. Version may be specified either with or without the `v` prefix, for example `v4.12` and `4.12` are semantically the same.
+* Node.js
+* Visual C++ Redistributable (Windows-based runners only)
+* Bash shell   
+  If using Windows runners, this must be a Windows-based `bash` variant, for example as provided by MSYS2. You must make sure that this Windows-based `bash` variant is used for `run` steps that specify `shell: bash`. Actions will fail if the GitHub runner executes `bash` commands on the WSL-provided `bash.exe`
 
-### Action outputs
+<!-- END-INCLUDE:action/_generic/prerequisites.md -->
 
-For each tool being installed, the action outputs several environment variables for use by later workflow steps.
 
-**`PATH`**    
-If the `export-path` action input was set to `true` (default), the bin-directory of the installed tool will be added to the workflow `PATH` environment variable.
+<!-- END-INCLUDE:action/_generic/prerequisites-h3.md -->
 
-**`<TOOL_NAME>_INSTALL_DIR`**    
-Directory where the corresponding tool was installed. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_INSTALL_DIR`.
-
-**`<TOOL_NAME>_BIN_DIR`**    
-Bin-directory that holds the executables for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_BIN_DIR`.
-
-**`<TOOL_NAME>_CMD`**    
-Fully qualified path to the (primary) executable/script for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_CMD`.
 
 ### Sample usage
 
@@ -65,21 +51,57 @@ The sample workflow below demonstrates how to configure the action for installin
 ```yaml
     steps:    
       - name: Setup Fortify tools
-        uses: fortify/github-action/setup@v1
+        uses: fortify/github-action/setup@v2
         with:
+          tool-definitions: https://github.com/fortify/tool-definitions/releases/download/v1/tool-definitions.yaml.zip
           export-path: true
           fcli: latest
           sc-client: 23.1.0
           fod-uploader: latest
           vuln-exporter: v2
           bugtracker-utility: skip
+          debricked-cli: skip
       - name: Run fcli from PATH
         run: fcli -V
       - name: Run fcli using FCLI_CMD environment variable
         run: ${FCLI_CMD} -V
 ```
 
-<!-- END-INCLUDE:action-setup.md -->
+### Action inputs
+
+This section lists the inputs that can be specified in the `with:` clause for this GitHub Action. Any inputs marked in **bold** are required.
+
+| Action input | Description |
+| :--- | :--- |
+| export&#8209;path |  Whether to add the installed tools to the system PATH variable. Allowed values: `true` (default) or `false` |
+| tool&#8209;definitions | Allows for overriding the location of the Fortify tool definitions bundle. This can be specified either as an action input or through the `TOOL_DEFINITIONS` environment variable; see the 'Action environment variable inputs' section below for details. |
+| fcli | The fcli version to install. Allowed values: `skip` (default value, do not install fcli), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.0` and `2.0.0` are semantically the same. |
+| sc&#8209;client | The ScanCentral Client version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `23.1` will install the latest known `23.1.y` patch version. Version may be specified either with or without the `v` prefix, for example `v23.1` and `23.1` are semantically the same. |
+| fod&#8209;uploader | The FoDUploader version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v5` will install the latest known `5.x.y` version. Version may be specified either with or without the `v` prefix, for example `v5.4.0` and `5.4.0` are semantically the same. |
+| vuln&#8209;exporter | The FortifyVulnerabilityExporter version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v2` will install the latest known `2.x.y` version. Version may be specified either with or without the `v` prefix, for example `v2.0.4` and `2.0.4` are semantically the same. |
+| bugtracker&#8209;utility | The FortifyBugTrackerUtility version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v4` will install the latest known `4.x` version. Version may be specified either with or without the `v` prefix, for example `v4.12` and `4.12` are semantically the same. |
+| debricked&#8209;cli | The Debricked CLI version to install. Allowed values: `skip` (default value, do not install), `latest`, or specific version number. Supports semantic versioning, for example `v1` will install the latest known `1.x` version. Version may be specified either with or without the `v` prefix, for example `v1` and `1` are semantically the same. |
+
+### Action environment variable inputs
+
+This section lists the environment variables that can be specified in the `env:` clause for this GitHub Action. Any environment variables marked in **bold** are required.
+
+| Environment variable | Description |
+| :--- | :--- |
+| TOOL_DEFINITIONS | Fortify tool definitions are used by this GitHub Action to determine available versions, download location and other details of various Fortify-related tools, as required for action execution. By default, the Fortify-provided tool definitions hosted at https://github.com/fortify/tool-definitions/releases/tag/v1 will be used.<br/><br/>This environment variable allows for overriding the default tool definitions, pointing to either a URL or local (workspace) file. For example, if GitHub workflows are not allowed to download tools from their public internet locations, customers may host the tool installation bundles on an internal server, together with a customized tool definitions bundle that lists the alternative download URLs. |
+
+### Action outputs
+
+For each tool being installed, the action outputs several environment variables for use by later workflow steps.
+
+| Environment variable | Description |
+| :--- | :--- |
+| PATH | If the `export-path` action input was set to `true` (default), the bin-directory of the installed tool will be added to the workflow `PATH` environment variable. |
+| &lt;TOOL_NAME&gt;_INSTALL_DIR | Directory where the corresponding tool was installed. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_INSTALL_DIR`. |
+| &lt;TOOL_NAME&gt;_BIN_DIR | Bin-directory that holds the executables for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_BIN_DIR`. |
+| &lt;TOOL_NAME&gt;_CMD | Fully qualified path to the (primary) executable/script for the corresponding tool. `<TOOL_NAME>` corresponds to the various action inputs, but converted to uppercase and dashes replaced by underscore, for example `FOD_UPLOADER_CMD`. |
+
+<!-- END-INCLUDE:action/setup/readme.md -->
 
 
 
@@ -87,13 +109,11 @@ The sample workflow below demonstrates how to configure the action for installin
 
 ## Support
 
-The only warranties for products and services of Open Text and its affiliates and licensors (“Open Text”) are as may be set forth in the express warranty statements accompanying such products and services. Nothing herein should be construed as constituting an additional warranty. Open Text shall not be liable for technical or editorial errors or omissions contained herein. The information contained herein is subject to change without notice.
+For general assistance, please join the [Fortify Community](https://community.opentext.com/cybersec/fortify/) to get tips and tricks from other users and the OpenText team.
+ 
+OpenText customers can contact our world-class [support team](https://www.opentext.com/support/opentext-enterprise/) for questions, enhancement requests and bug reports. You can also raise questions and issues through your OpenText Fortify representative like Customer Success Manager or Technical Account Manager if applicable.
 
-The software is provided "as is" and is not supported through the regular OpenText Support channels. Support requests may be submitted through the [GitHub Issues](https://github.com/fortify-ps/github-action/issues) page for this repository. A (free) GitHub account is required to submit new issues or to comment on existing issues. 
-
-Support requests created through the GitHub Issues page may include bug reports, enhancement requests and general usage questions. Please avoid creating duplicate issues by checking whether there is any existing issue, either open or closed, that already addresses your question, bug or enhancement request. If an issue already exists, please add a comment to provide additional details if applicable.
-
-Support requests on the GitHub Issues page are handled on a best-effort basis; there is no guaranteed response time, no guarantee that reported bugs will be fixed, and no guarantee that enhancement requests will be implemented. If you require dedicated support for this and other Fortify software, please consider purchasing OpenText Fortify Professional Services. OpenText Fortify Professional Services can assist with general usage questions, integration of the software into your processes, and implementing customizations, bug fixes, and feature requests (subject to feasibility analysis). Please contact your OpenText Sales representative or fill in the [Professional Services Contact Form](https://www.microfocus.com/en-us/cyberres/contact/professional-services) to obtain more information on pricing and the services that OpenText Fortify Professional Services can provide.
+You may also consider raising questions or issues through the [GitHub Issues page](https://github.com/fortify/github-action/issues) (if available for this repository), providing public visibility and allowing anyone (including all contributors) to review and comment on your question or issue. Note that this requires a GitHub account, and given public visibility, you should refrain from posting any confidential data through this channel. 
 
 <!-- END-INCLUDE:h2.support.md -->
 

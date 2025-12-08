@@ -1,4 +1,4 @@
-# fortify/github-action/package@v1 
+# fortify/github-action/package@v2 
 
 
 <!-- START-INCLUDE:p.marketing-intro.md -->
@@ -9,38 +9,60 @@
 
 
 
-<!-- START-INCLUDE:action-package.md -->
+<!-- START-INCLUDE:action/package/readme.md -->
 
-This action packages application source code using [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2310/SC_SAST_Help_23.1.0/index.htm#A_Clients.htm). The output package is saved as `package.zip`.
-
-### Action environment variable inputs
+This action packages application source code using [ScanCentral Client](https://www.microfocus.com/documentation/fortify-software-security-center/2540/sc-sast-ugd-html-25.4.0/doc/2404_25.4/home.html). The output package is saved as `package.zip`.
 
 
-<!-- START-INCLUDE:env-package.md -->
+<!-- START-INCLUDE:action/_generic/prerequisites-h3.md -->
 
-**`EXTRA_PACKAGE_OPTS`** - OPTIONAL   
-By default, this action runs `scancentral package -o package.zip` to package application source code. Based on the  automated build tool detection feature provided by ScanCentral Client, this default `scancentral` command is often sufficient. Depending on your build setup, you may however need to configure the `EXTRA_PACKAGE_OPTS` environment variable to specify additional packaging options. 
+### Prerequisites
 
-As an example, if the build file that you want to use for packaging doesn't adhere  to common naming conventions, you can configure the `-bf <custom build file>` option using the `EXTRA_PACKAGE_OPTS` environment variable. See [Command-line options for the package command]({{var:sc-client-doc-base-url#CLI.htm#Package}}) for more information on available options.
 
-<!-- END-INCLUDE:env-package.md -->
+<!-- START-INCLUDE:action/_generic/prerequisites.md -->
+
+This action assumes the standard software packages as provided by GitHub-hosted runners to be available. If you are using self-hosted runners, you may need to install some of these software packages in order to successfully use this action. In particular, not having the following software installed is known to cause issues when running `fortify/github-action` or one of its sub-actions:
+
+* Node.js
+* Visual C++ Redistributable (Windows-based runners only)
+* Bash shell   
+  If using Windows runners, this must be a Windows-based `bash` variant, for example as provided by MSYS2. You must make sure that this Windows-based `bash` variant is used for `run` steps that specify `shell: bash`. Actions will fail if the GitHub runner executes `bash` commands on the WSL-provided `bash.exe`
+
+<!-- END-INCLUDE:action/_generic/prerequisites.md -->
+
+
+<!-- END-INCLUDE:action/_generic/prerequisites-h3.md -->
 
 
 ### Sample usage
 
-The sample workflow below demonstrates how to configure the action for running a SAST scan on FoD.
+The sample workflow below demonstrates how to configure the action packaging application source code.
 
 ```yaml
     steps:  
       - name: Check out source code
         uses: actions/checkout@v4  
       - name: Package source code
-        uses: fortify/github-action/package@v1
+        uses: fortify/github-action/package@v2
         env:
-          # EXTRA_PACKAGE_OPTS: -bf custom-pom.xml
+          # SC_CLIENT_VERSION: 24.4.1
+          # DO_PACKAGE_DEBUG: true
+          # PACKAGE_EXTRA_OPTS: -oss -bt mvn
+          # TOOL_DEFINITIONS: https://ftfy.mycompany.com/tool-definitions/v1/tool-definitions.yaml.zip
 ```
 
-<!-- END-INCLUDE:action-package.md -->
+### Action environment variable inputs
+
+This section lists the environment variables that can be specified in the `env:` clause for this GitHub Action. Any environment variables marked in **bold** are required.
+
+| Environment variable | Description |
+| :--- | :--- |
+| SC_CLIENT_VERSION | By default, this action uses ScanCentral Client 25.4.0 for packaging. This environment variable allows for overriding the ScanCentral Client version used for packaging. |
+|DO_PACKAGE_DEBUG| If set to true, this will enable the `-debug` option on the `scancentral` command, and store both ScanCentral logs and the `package.zip` file as job artifacts.|
+|PACKAGE_EXTRA_OPTS<br/>EXTRA_PACKAGE_OPTS| By default, this action runs `scancentral package -o package.zip` to package application source code. Use `PACKAGE_EXTRA_OPTS` to specify additional packaging options, for example `PACKAGE_EXTRA_OPTS: -bt mvn -bf <custom build file>`. See [Command-line options for the package command](https://www.microfocus.com/documentation/fortify-software-security-center/2540/sc-sast-ugd-html-25.4.0/doc/2404_25.4/home.html) for more information on available options. Note that `EXTRA_PACKAGE_OPTS` is deprecated; please use `PACKAGE_EXTRA_OPTS`.|
+| TOOL_DEFINITIONS | Fortify tool definitions are used by this GitHub Action to determine available versions, download location and other details of various Fortify-related tools, as required for action execution. By default, the Fortify-provided tool definitions hosted at https://github.com/fortify/tool-definitions/releases/tag/v1 will be used.<br/><br/>This environment variable allows for overriding the default tool definitions, pointing to either a URL or local (workspace) file. For example, if GitHub workflows are not allowed to download tools from their public internet locations, customers may host the tool installation bundles on an internal server, together with a customized tool definitions bundle that lists the alternative download URLs. |
+
+<!-- END-INCLUDE:action/package/readme.md -->
 
 
 
@@ -48,13 +70,11 @@ The sample workflow below demonstrates how to configure the action for running a
 
 ## Support
 
-The only warranties for products and services of Open Text and its affiliates and licensors (“Open Text”) are as may be set forth in the express warranty statements accompanying such products and services. Nothing herein should be construed as constituting an additional warranty. Open Text shall not be liable for technical or editorial errors or omissions contained herein. The information contained herein is subject to change without notice.
+For general assistance, please join the [Fortify Community](https://community.opentext.com/cybersec/fortify/) to get tips and tricks from other users and the OpenText team.
+ 
+OpenText customers can contact our world-class [support team](https://www.opentext.com/support/opentext-enterprise/) for questions, enhancement requests and bug reports. You can also raise questions and issues through your OpenText Fortify representative like Customer Success Manager or Technical Account Manager if applicable.
 
-The software is provided "as is" and is not supported through the regular OpenText Support channels. Support requests may be submitted through the [GitHub Issues](https://github.com/fortify-ps/github-action/issues) page for this repository. A (free) GitHub account is required to submit new issues or to comment on existing issues. 
-
-Support requests created through the GitHub Issues page may include bug reports, enhancement requests and general usage questions. Please avoid creating duplicate issues by checking whether there is any existing issue, either open or closed, that already addresses your question, bug or enhancement request. If an issue already exists, please add a comment to provide additional details if applicable.
-
-Support requests on the GitHub Issues page are handled on a best-effort basis; there is no guaranteed response time, no guarantee that reported bugs will be fixed, and no guarantee that enhancement requests will be implemented. If you require dedicated support for this and other Fortify software, please consider purchasing OpenText Fortify Professional Services. OpenText Fortify Professional Services can assist with general usage questions, integration of the software into your processes, and implementing customizations, bug fixes, and feature requests (subject to feasibility analysis). Please contact your OpenText Sales representative or fill in the [Professional Services Contact Form](https://www.microfocus.com/en-us/cyberres/contact/professional-services) to obtain more information on pricing and the services that OpenText Fortify Professional Services can provide.
+You may also consider raising questions or issues through the [GitHub Issues page](https://github.com/fortify/github-action/issues) (if available for this repository), providing public visibility and allowing anyone (including all contributors) to review and comment on your question or issue. Note that this requires a GitHub account, and given public visibility, you should refrain from posting any confidential data through this channel. 
 
 <!-- END-INCLUDE:h2.support.md -->
 
