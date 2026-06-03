@@ -1,23 +1,36 @@
-## [1.5.1](https://github.com/fortify/github-action/compare/v1.4.0...v1.5.1) (2024-11-01)
+# Changelog
 
-
-### Features
-
-* FoD: Add support for creating application through `DO_SETUP` ([2d91e3c](https://github.com/fortify/github-action/commit/2d91e3c5c405391e5ee2cfe725a77b0ded38dcd0))
-* FoD: Automatically set `--app-owner` if `FOD_USER` is configured ([345ddda](https://github.com/fortify/github-action/commit/345ddda04de863b34e9566df5ea088f5872eeef4))
-* FoD: Improve handling of `--copy-from` option in `SETUP_EXTRA_OPTS` ([2d91e3c](https://github.com/fortify/github-action/commit/2d91e3c5c405391e5ee2cfe725a77b0ded38dcd0))
-* Major documentation usability improvements ([22ea8e9](https://github.com/fortify/github-action/commit/22ea8e9ef9edb24e364d1dc66230649726ad450c))
-* Simplify setup of Debricked scans on FoD ([7c25788](https://github.com/fortify/github-action/commit/7c25788b4c57582d2039d70a1ad9aeb228e34c6c))
-* Update fcli to 2.9.0 ([2d91e3c](https://github.com/fortify/github-action/commit/2d91e3c5c405391e5ee2cfe725a77b0ded38dcd0))
-* Update ScanCentral Client to 24.4.0 ([f3246ac](https://github.com/fortify/github-action/commit/f3246ac1d35a20a34df0a2d404479f1fabeae574))
+## [3.1.1](https://github.com/fortify/github-action/compare/v3.1.0...v3.1.1) (2026-05-15)
 
 
 ### Bug Fixes
 
-* Improve parsing of boolean flags in `*_EXTRA_OPTS` ([2d91e3c](https://github.com/fortify/github-action/commit/2d91e3c5c405391e5ee2cfe725a77b0ded38dcd0))
-* Update Debricked CLI to 2.1.7 ([2d91e3c](https://github.com/fortify/github-action/commit/2d91e3c5c405391e5ee2cfe725a77b0ded38dcd0))
+* Update dependencies ([8499a16](https://github.com/fortify/github-action/commit/8499a16f4288e9536889f2a74f4421bab20c3554))
+* Update setup action to Node.js 24 ([7afe7f3](https://github.com/fortify/github-action/commit/7afe7f36df6ced6eedf94c28120c2fafcfd51f30))
 
-# Changelog
+## [3.1.0](https://github.com/fortify/github-action/compare/v3.0.0...v3.1.0) (2026-04-22)
+
+
+### Features
+
+* Add `fortify/github-action/with-ghes-artifacts` sub-action to upload CI workflow debug artifacts to GitHub Enterprise Server artifact storage ([15c59a7](https://github.com/fortify/github-action/commit/15c59a785645801d7830cc6e25f57f87e25659e0))
+* Add `fortify/github-action/with-github-artifacts` sub-action to upload CI workflow debug artifacts to github.com artifact storage (same as top-level `fortify/github-action`) ([15c59a7](https://github.com/fortify/github-action/commit/15c59a785645801d7830cc6e25f57f87e25659e0))
+* Add `fortify/github-action/without-artifacts` sub-action that doesn't upload CI workflow debug artifacts, allowing users to upload debug artifacts to a custom storage provider ([15c59a7](https://github.com/fortify/github-action/commit/15c59a785645801d7830cc6e25f57f87e25659e0))
+
+## [3.0.0](https://github.com/fortify/github-action/compare/v2.2.0...v3.0.0) (2026-02-24)
+
+
+### ⚠ BREAKING CHANGES
+
+* `fortify/github-action/setup`: Now uses `@fortify/setup` NPM component instead of GitHub-specific implementation, resulting in changes to supported action inputs and environment variables
+* `fortify/github-action`: Now uses `fcli action run ci` instead of GitHub-specific scripts, resulting in changes to supported action inputs and environment variables
+* `fortify/github-action/*`: All sub-actions except for the `setup` action have been removed; use the top-level `fortify/github-action` to run a full AST scan pipeline, or use the `setup` action in combination with `fcli` commands or actions to implement custom workflows
+
+### Features
+
+* `fortify/github-action/*`: All sub-actions except for the `setup` action have been removed; use the top-level `fortify/github-action` to run a full AST scan pipeline, or use the `setup` action in combination with `fcli` commands or actions to implement custom workflows ([899cd9b](https://github.com/fortify/github-action/commit/899cd9b608be9c835b3943bc58ac92020608eae4))
+* `fortify/github-action/setup`: Now uses `@fortify/setup` NPM component instead of GitHub-specific implementation, resulting in changes to supported action inputs and environment variables ([899cd9b](https://github.com/fortify/github-action/commit/899cd9b608be9c835b3943bc58ac92020608eae4))
+* `fortify/github-action`: Now uses `fcli action run ci` instead of GitHub-specific scripts, resulting in changes to supported action inputs and environment variables ([899cd9b](https://github.com/fortify/github-action/commit/899cd9b608be9c835b3943bc58ac92020608eae4))
 
 ## [2.2.0](https://github.com/fortify/github-action/compare/v2.1.1...v2.2.0) (2025-11-19)
 

@@ -1,11 +1,3 @@
-
-<!-- START-INCLUDE:repo-usage.md -->
-
-## Usage instructions
-
-
-<!-- START-INCLUDE:repo-usage-text.md -->
-
 ### Quick Start
 
 #### OpenText Core Application Security (Fortify on Demand)
@@ -112,18 +104,10 @@ The top-level `fortify/github-action` action uploads debug artifacts to GitHub.c
 
 Given that these GitHub Actions are just thin wrappers around `@fortify/setup` and `fcli`, detailed usage documentation is available on the fcli documentation website:
 
-* `fortify/github-action` (default — GitHub.com artifact upload): [FoD](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-fod.html) | [SSC](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-ssc.html)
-* `fortify/github-action/with-github-artifacts` (explicit GitHub.com artifact upload): [FoD](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-with-github-artifacts-fod.html) | [SSC](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-with-github-artifacts-ssc.html)
-* `fortify/github-action/with-ghes-artifacts` (GHES-compatible artifact upload): [FoD](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-with-ghes-artifacts-fod.html) | [SSC](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-with-ghes-artifacts-ssc.html)
-* `fortify/github-action/without-artifacts` (custom artifact upload): [FoD](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-without-artifacts-fod.html) | [SSC](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/ast-action-without-artifacts-ssc.html)
-* [`fortify/github-action/setup`](https://fortify.github.io/fcli/v3/ci/github/v3.1.x/setup-action.html)
-
-<!-- END-INCLUDE:repo-usage-text.md -->
+* `fortify/github-action` (default — GitHub.com artifact upload): [FoD]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-fod.html) | [SSC]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-ssc.html)
+* `fortify/github-action/with-github-artifacts` (explicit GitHub.com artifact upload): [FoD]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-with-github-artifacts-fod.html) | [SSC]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-with-github-artifacts-ssc.html)
+* `fortify/github-action/with-ghes-artifacts` (GHES-compatible artifact upload): [FoD]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-with-ghes-artifacts-fod.html) | [SSC]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-with-ghes-artifacts-ssc.html)
+* `fortify/github-action/without-artifacts` (custom artifact upload): [FoD]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-without-artifacts-fod.html) | [SSC]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/ast-action-without-artifacts-ssc.html)
+* [`fortify/github-action/setup`]({{var:fcli-doc-base-url}}/ci/github/{{var:action-doc-version}}/setup-action.html)
 
 
-<!-- END-INCLUDE:repo-usage.md -->
-
-
----
-
-*[This document was auto-generated from USAGE.template.md; do not edit by hand](https://github.com/fortify/shared-doc-resources/blob/main/USAGE.md)*
